@@ -9,6 +9,5 @@ import java.util.Collection;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
-    Collection<User>findAllBy();
+    Collection<User> findAllByChatId(Long chatId);}
 
-}

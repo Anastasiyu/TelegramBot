@@ -4,7 +4,6 @@ import com.example.telegrambot.model.NotificationTask;
 import com.example.telegrambot.model.User;
 import com.example.telegrambot.repository.NotificationTaskRepository;
 import com.example.telegrambot.repository.UserRepository;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,14 +28,16 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @PropertySource("application.properties")
 @Component
 public class TelegramBotService extends TelegramLongPollingBot {
-    private Logger log = LoggerFactory.getLogger(TelegramBotService.class);
+    private final Logger log = LoggerFactory.getLogger(TelegramBotService.class);
     private final UserRepository userRepository;
     private final NotificationTaskRepository notificationTaskRepository;
 
@@ -98,6 +99,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
             switch (messageText) {
                 case "/start":
+
                     registerUser(update.getMessage());
                     startCommandReceived(chatId, update.getMessage().getChat().getUserName());
                     break;
@@ -257,4 +259,20 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
         }
     }
+
+    public Collection<User> findAllByChatId(Long chatId) {
+        log.debug("Method findAllByChatId was invoked");
+        return userRepository.findAllByChatId(chatId).stream()
+                .filter(user -> user.getChatId() == chatId)
+                .collect(Collectors.toList());
+    }
+
+
+    public List<NotificationTask> findByTaskDate(LocalDateTime currentDate){
+        log.debug("Method findByTaskDate was invoked");
+        return notificationTaskRepository.findByTaskDate(currentDate).stream()
+                .filter(notificationTask -> notificationTask.getCurrentDate() == currentDate)
+                .collect(Collectors.toList());
+    }
 }
+
