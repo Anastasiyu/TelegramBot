@@ -1,12 +1,11 @@
 package com.example.telegrambot.model;
 
-
-
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import java.sql.Timestamp;
 import java.util.Collection;
+
 @Entity(name = "user")
 public class User {
 
@@ -50,7 +49,7 @@ public class User {
     public String toString() {
         return "Пользователь" +
                 "  " + chatId +
-                "/ " + userName +
+                "/ "  + userName +
                 ", " + registeredAt;
     }
 }

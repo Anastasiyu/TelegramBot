@@ -1,56 +1,54 @@
 package com.example.telegrambot.model;
 
-
-
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity(name = "Notification_task")
 public class NotificationTask {
-    @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.SEQUENCE)
+  private Long id;
 
-    private String task;
-    private LocalDateTime currentDate;
+  private String task;
+  private LocalDateTime currentDate;
 
-    public LocalDateTime getCurrentDate() {
-        return currentDate;
-    }
+  public LocalDateTime getCurrentDate() {
+    return currentDate;
+  }
 
-    public void setCurrentDate(LocalDateTime currentDate) {
-        this.currentDate = currentDate;
-    }
+  public void setCurrentDate(LocalDateTime currentDate) {
+    this.currentDate = currentDate;
+  }
 
-    public void setUser(User user) {
-        this.user = user;
-    }
+  public void setUser(User user) {
+    this.user = user;
+  }
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
-
-
-
-    public String getTask() {
-        return task;
-    }
-
-    public void setTask(String task) {
-        this.task = task;
-    }
+  @ManyToOne
+  @JoinColumn(name = "user_id")
+  private User user;
 
 
 
-    public Long getId() {
-        return id;
-    }
+  public String getTask() {
+    return task;
+  }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+  public void setTask(String task) {
+    this.task = task;
+  }
 
 
-    public User getUser() {return getUser();
-    }
+
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
+  }
+
+
+  public User getUser() {return getUser();
+  }
 }
