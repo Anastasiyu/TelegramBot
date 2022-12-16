@@ -252,7 +252,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
   @Scheduled(cron = "${cron.scheduler}")
   private void sendMemo() {
     LocalDateTime currentDate = LocalDateTime.now();
-    List<NotificationTask> allTask = this.notificationTaskRepository.findByTaskDate(currentDate);
+    List<NotificationTask> allTask = this.notificationTaskRepository.findByCurrentDate(currentDate);
     for (NotificationTask notificationTask : allTask) {
       String chat = String.valueOf(notificationTask.getUser().getChatId());
       String message = notificationTask.getTask();
@@ -270,7 +270,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
   public List<NotificationTask> findByTaskDate(LocalDateTime currentDate){
     log.debug("Method findByTaskDate was invoked");
-    return notificationTaskRepository.findByTaskDate(currentDate).stream()
+    return notificationTaskRepository.findByCurrentDate(currentDate).stream()
             .filter(notificationTask -> notificationTask.getCurrentDate() == currentDate)
             .collect(Collectors.toList());
   }
