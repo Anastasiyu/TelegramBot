@@ -6,7 +6,7 @@ import javax.persistence.OneToMany;
 import java.sql.Timestamp;
 import java.util.Collection;
 
-@Entity(name = "user")
+@Entity(name = "User")
 public class User {
 
     @Id
