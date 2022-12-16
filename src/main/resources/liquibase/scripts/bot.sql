@@ -5,7 +5,7 @@ CREATE TABLE Notification_task
 (
     id   SERIAL,
     task TEXT,                       -- планы
- currentDate LocalDateTime,
+    currentDate LocalDateTime,
 
     -- changeset safiulina:2 добавление таблицы
     CREATE TABLE usersDataTable (
@@ -13,5 +13,6 @@ CREATE TABLE Notification_task
         name varchar (100) NOT NULL, -- имя пользователя
         registeredAt Timestamp
         );
+
 
 )
