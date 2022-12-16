@@ -2,14 +2,12 @@ package com.example.telegrambot.model;
 
 
 
-import org.springframework.data.annotation.Id;
-
 import javax.persistence.Entity;
+import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import java.sql.Timestamp;
 import java.util.Collection;
-
-@Entity(name = "usersDataTable")
+@Entity(name = "user")
 public class User {
 
     @Id
@@ -19,9 +17,9 @@ public class User {
     private String userName;
 
     private Timestamp registeredAt;
-
-    @OneToMany(mappedBy = "usersDataTable")
+    @OneToMany(mappedBy = "user")
     private Collection<NotificationTask> notification_tasks;
+
 
     public Long getChatId() {
         return chatId;
@@ -52,7 +50,7 @@ public class User {
     public String toString() {
         return "Пользователь" +
                 "  " + chatId +
-                "/ "  + userName +
+                "/ " + userName +
                 ", " + registeredAt;
     }
 }

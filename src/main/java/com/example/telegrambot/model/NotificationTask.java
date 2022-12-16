@@ -12,16 +12,25 @@ public class NotificationTask {
     private Long id;
 
     private String task;
-    private LocalDateTime data;
-    private LocalDateTime time;
+    private LocalDateTime currentDate;
+
+    public LocalDateTime getCurrentDate() {
+        return currentDate;
+    }
+
+    public void setCurrentDate(LocalDateTime currentDate) {
+        this.currentDate = currentDate;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
 
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
 
-    public NotificationTask() {
 
-    }
 
     public String getTask() {
         return task;
@@ -31,21 +40,7 @@ public class NotificationTask {
         this.task = task;
     }
 
-    public LocalDateTime getData() {
-        return data;
-    }
 
-    public void setData(LocalDateTime data) {
-        this.data = data;
-    }
-
-    public LocalDateTime getTime() {
-        return time;
-    }
-
-    public void setTime(LocalDateTime time) {
-        this.time = time;
-    }
 
     public Long getId() {
         return id;
@@ -56,11 +51,6 @@ public class NotificationTask {
     }
 
 
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
+    public User getUser() {return getUser();
     }
 }
