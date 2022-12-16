@@ -1,32 +1,25 @@
 package com.example.telegrambot.model;
 
 
-import jakarta.persistence.*;
 
-
+import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity(name = "Notification_task")
-public class Notification_task {
+public class NotificationTask {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
-    @Column(name = "id", nullable = false)
     private Long id;
 
-    final int RECONNECT_PAUSE = 10_000;
-
-    public Notification_task(Long id, String task, LocalDateTime data, LocalDateTime time) {
-        this.id = id;
-        this.task = task;
-        this.data = data;
-        this.time = time;
-    }
-
     private String task;
-private LocalDateTime data;
-private LocalDateTime time;
+    private LocalDateTime data;
+    private LocalDateTime time;
 
-    public Notification_task() {
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    public NotificationTask() {
 
     }
 
@@ -63,6 +56,11 @@ private LocalDateTime time;
     }
 
 
+    public User getUser() {
+        return user;
+    }
 
-
+    public void setUser(User user) {
+        this.user = user;
+    }
 }

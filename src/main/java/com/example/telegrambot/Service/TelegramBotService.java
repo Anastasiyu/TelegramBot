@@ -1,12 +1,14 @@
 package com.example.telegrambot.Service;
 
-import com.example.telegrambot.configuration.TelegramBotConfiguration;
-import com.example.telegrambot.listener.TelegramBotUpdatesListener;
-import com.example.telegrambot.model.Memo;
+import com.example.telegrambot.model.NotificationTask;
 import com.example.telegrambot.model.User;
-import com.example.telegrambot.repository.MemoRepository;
+import com.example.telegrambot.repository.NotificationTaskRepository;
 import com.example.telegrambot.repository.UserRepository;
-import lombok.extern.slf4j.Slf4j;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -24,34 +26,43 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-@Slf4j
+@PropertySource("application.properties")
 @Component
 public class TelegramBotService extends TelegramLongPollingBot {
-
+    private Logger log = LoggerFactory.getLogger(TelegramBotService.class);
     private final UserRepository userRepository;
-    private final MemoRepository memoRepository;
-    final TelegramBotConfiguration config;
-    private final TelegramBotUpdatesListener listener;
+    private final NotificationTaskRepository notificationTaskRepository;
 
-
-    static final String HELP_TEXT = "Этот бот создан для вывода напоминай по времени.\n\n" +
-            "Вы можете выполнять команды из главного меню слева или набрав команду:\n\n" +
-            "Введите /start чтобы увидеть приветственное сообщение\n\n" +
-            "Введите /memo что бы создать напоминание\n\n" +
-            "Введите /deleteMemo что бы удалить напоминание\n\n" +
-            "Введите /settings что бы сменить настройки напоминания\n\n" +
-            "Введите /help чтобы снова увидеть это сообщение";
+    private final String botName;
+    private final String botToken;
+    static final String HELP_TEXT =
+            "Этот бот создан для вывода напоминай по времени.\n\n"
+                    + "Вы можете выполнять команды из главного меню слева или набрав команду:\n\n"
+                    + "Введите /start чтобы увидеть приветственное сообщение\n\n"
+                    + "Введите /memo что бы создать напоминание\n\n"
+                    + "Введите /deleteMemo что бы удалить напоминание\n\n"
+                    + "Введите /settings что бы сменить настройки напоминания\n\n"
+                    + "Введите /help чтобы снова увидеть это сообщение";
     static final String YES_BUTTON = "YES_BUTTON";
     static final String NO_BUTTON = "NO_BUTTON";
 
     static final String ERROR_TEXT = "Error occurred: ";
 
-    public TelegramBotService(TelegramBotConfiguration config, UserRepository userRepository, MemoRepository memoRepository, TelegramBotUpdatesListener listener) {
-        this.config = config;
-        this.listener = listener;
+    public TelegramBotService(UserRepository userRepository,
+                              NotificationTaskRepository notificationTaskRepository,
+                              @Value("${telegrem.bot.name}") String botName,
+                              @Value("${telegram.bot.token}") String botToken) {
+        this.notificationTaskRepository = notificationTaskRepository;
+        this.botName = botName;
+        this.botToken = botToken;
+
         List<BotCommand> listofCommands = new ArrayList<>();
         listofCommands.add(new BotCommand("/start", "get a welcome message"));
         listofCommands.add(new BotCommand("/mydata", "get your data stored"));
@@ -64,18 +75,18 @@ public class TelegramBotService extends TelegramLongPollingBot {
             log.error("Ошибка настройки списка команд бота: " + e.getMessage());
         }
         this.userRepository = userRepository;
-        this.memoRepository = memoRepository;
+
     }
 
     @Override
     public String getBotUsername() {
-        return config.getBotName();
+        return this.botName;
     }
 
     @Override
     public String getBotToken() {
 
-        return config.getToken();
+        return this.botToken;
     }
 
     @Override
@@ -85,33 +96,24 @@ public class TelegramBotService extends TelegramLongPollingBot {
             String messageText = update.getMessage().getText();
             long chatId = update.getMessage().getChatId();
 
+            switch (messageText) {
+                case "/start":
+                    registerUser(update.getMessage());
+                    startCommandReceived(chatId, update.getMessage().getChat().getUserName());
+                    break;
 
+                case "/help":
+                    prepareAndSendMessage(chatId, HELP_TEXT);
+                    break;
 
-                switch (messageText) {
-                    case "/start":
+                case "/register":
+                    register(chatId);
+                    break;
 
-                        registerUser(update.getMessage());
-                        startCommandReceived(chatId, update.getMessage().getChat().getUserName());
-                        break;
-
-                    case "/help":
-
-                        prepareAndSendMessage(chatId, HELP_TEXT);
-                        break;
-
-                    case "/register":
-
-                        register(chatId);
-                        break;
-
-                    default:
-
-                        prepareAndSendMessage(chatId, "Извините, команда не была распознана");
-
-                }
+                default:
+                    prepareAndSendMessage(chatId, "Извините, команда не была распознана");
             }
-
-
+        }
     }
 
     private void register(long chatId) {
@@ -144,16 +146,14 @@ public class TelegramBotService extends TelegramLongPollingBot {
         executeMessage(message);
     }
 
-
-
-    //регистрация пользователя
+    // регистрация пользователя
     private void registerUser(Message msg) {
-        //проверяет нет ли такого пользователя
-        if(userRepository.findById(msg.getChatId()).isEmpty()){
+        // проверяет нет ли такого пользователя
+        if (userRepository.findById(msg.getChatId()).isEmpty()) {
 
             var chatId = msg.getChatId();
             var chat = msg.getChat();
-            //если нет такого пользователя добавляем
+            // если нет такого пользователя добавляем
             User user = new User();
 
             user.setChatId(chatId);
@@ -167,14 +167,13 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
     private void startCommandReceived(long chatId, String name) {
 
-
         String answer = "Привет, " + name + ", приятно познакомиться с вами!" + " :blush:";
         log.info("Ответил пользователю " + name);
 
-
         sendMessage(chatId, answer);
     }
-//метод отправить сообщение
+
+    // метод отправить сообщение
     private void sendMessage(long chatId, String textToSend) {
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
@@ -206,8 +205,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
         executeMessage(message);
     }
 
-// метод редактирования текста сообщения
-    private void executeEditMessageText(String text, long chatId, long messageId){
+    // метод редактирования текста сообщения
+    private void executeEditMessageText(String text, long chatId, long messageId) {
         EditMessageText message = new EditMessageText();
         message.setChatId(String.valueOf(chatId));
         message.setText(text);
@@ -219,38 +218,43 @@ public class TelegramBotService extends TelegramLongPollingBot {
             log.error(ERROR_TEXT + e.getMessage());
         }
     }
-    //метод принимающий сообщение
-    private void executeMessage(SendMessage message){
+
+    // метод принимающий сообщение
+    private void executeMessage(SendMessage message) {
         try {
             execute(message);
         } catch (TelegramApiException e) {
             log.error(ERROR_TEXT + e.getMessage());
         }
     }
-//метод подготовка и отправка сообщения
-    private void prepareAndSendMessage(long chatId, String textToSend){
+
+    // метод подготовка и отправка сообщения
+    private void prepareAndSendMessage(long chatId, String textToSend) {
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
         message.setText(textToSend);
         executeMessage(message);
     }
 
-
-
-    //рассылка сообщения в заданное время
-    @Scheduled(cron = "${cron.scheduler}")
-    private void sendMemo(){
-
-        var memos = memoRepository.findAll();
-        var users = userRepository.findAll();
-
-        for(Memo ad: memos) {
-            for (User user: users){
-                prepareAndSendMessage(user.getChatId(), ad.getMemo());
-            }
+    private void parseMessage(String text) {
+        Pattern pattern = Pattern.compile("([0-9.:\\s]{16})(\\s)([\\W+]+)");
+        Matcher matcher = pattern.matcher(text);
+        if (matcher.matches()) {
+            String date = matcher.group(1);
+            String message = matcher.group(3);
+            LocalDateTime.parse(date, DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
         }
+    }
 
+    // рассылка сообщения в заданное время
+    @Scheduled(cron = "${cron.scheduler}")
+    private void sendMemo() {
+        LocalDateTime currentDate = LocalDateTime.now();
+        List<NotificationTask> allTask = this.notificationTaskRepository.findByTaskDate(currentDate);
+        for (NotificationTask notificationTask : allTask) {
+            String chat = String.valueOf(notificationTask.getUser().getChatId());
+            String message = notificationTask.getTask();
+
+        }
     }
 }
-
-
