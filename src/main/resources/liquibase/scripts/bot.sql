@@ -20,8 +20,11 @@ CREATE TABLE notification_task
     -- changeset safiulina:2 добавление таблицы
     CREATE TABLE "User" (
         id int4 primary key,         -- id
-        name varchar (100) NOT NULL, -- имя пользователя
+        userName varchar (100) NOT NULL, -- имя пользователя
         registeredAt Timestamp
+
         );
+
+
 
 

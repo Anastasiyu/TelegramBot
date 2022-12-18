@@ -4,7 +4,6 @@ import com.example.telegrambot.model.NotificationTask;
 import com.example.telegrambot.model.User;
 import com.example.telegrambot.repository.NotificationTaskRepository;
 import com.example.telegrambot.repository.UserRepository;
-import liquibase.pro.packaged.L;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,18 +13,12 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -101,7 +94,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
       switch (messageText) {
         case "/start":
 
-          registerUser(update.getMessage());
+
           startCommandReceived(chatId, update.getMessage().getChat().getUserName());
           break;
 
@@ -110,9 +103,12 @@ public class TelegramBotService extends TelegramLongPollingBot {
           sendMessage(chatId, HELP_TEXT);
           break;
 
-        case "/register":
-          registerUser(update.getMessage());
-          break;
+          case "    ":
+
+              parseMessage(messageText);
+              break;
+
+
 
         default:
           sendMessage(chatId, "Извините, данная команда не поддерживается!");
@@ -121,28 +117,10 @@ public class TelegramBotService extends TelegramLongPollingBot {
   }
 
 
-  // регистрация пользователя
-  private void registerUser(Message msg) {
-    // проверяет нет ли такого пользователя
-    if (userRepository.findById(msg.getChatId()).isEmpty()) {
-
-      var chatId = msg.getChatId();
-      var chat = msg.getChat();
-      // если нет такого пользователя добавляем
-      User user = new User();
-
-      user.setChatId(chatId);
-      user.setUserName(chat.getUserName());
-      user.setRegisteredAt(new Timestamp(System.currentTimeMillis()));
-
-      userRepository.save(user);
-      log.info("пользователь сохранен: " + user);
-    }
-  }
 
   private void startCommandReceived(long chatId, String name) {
 
-    String answer = "Привет, " + name + ", приятно познакомиться с вами!" + " :blush:";
+    String answer = "Привет, рад помочь Вам!";
     log.info("Ответил пользователю " + name);
 
     sendMessage(chatId, answer);
