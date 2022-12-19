@@ -90,10 +90,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
 
 
-
       switch (messageText) {
         case "/start":
-
 
           startCommandReceived(chatId, update.getMessage().getChat().getUserName());
           break;
@@ -103,12 +101,15 @@ public class TelegramBotService extends TelegramLongPollingBot {
           sendMessage(chatId, HELP_TEXT);
           break;
 
-          case "    ":
+          case "messageText":
 
               parseMessage(messageText);
               break;
 
+        case "/register":
 
+          registerUser(update.getMessage());
+          break;
 
         default:
           sendMessage(chatId, "Извините, данная команда не поддерживается!");
@@ -124,6 +125,24 @@ public class TelegramBotService extends TelegramLongPollingBot {
     log.info("Ответил пользователю " + name);
 
     sendMessage(chatId, answer);
+  }
+  //регистрация User
+  private void registerUser(Message msg) {
+
+    if(userRepository.findById(msg.getChatId()).isEmpty()){
+
+      var chatId = msg.getChatId();
+      var chat = msg.getChat();
+
+      User user = new User();
+
+      user.setChatId(chatId);
+      user.setUserName(chat.getUserName());
+      user.setRegisteredAt(new Timestamp(System.currentTimeMillis()));
+
+      userRepository.save(user);
+      log.info("user saved: " + user);
+    }
   }
 
   // метод отправить сообщение

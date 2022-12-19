@@ -18,7 +18,7 @@ CREATE TABLE notification_task
 );
 
     -- changeset safiulina:2 добавление таблицы
-    CREATE TABLE "User" (
+    CREATE TABLE "user" (
         id int4 primary key,         -- id
         userName varchar (100) NOT NULL, -- имя пользователя
         registeredAt Timestamp
@@ -26,5 +26,8 @@ CREATE TABLE notification_task
         );
 
 
+-- changeset safiulina:3 добавление таблицы
+
+ALTER TABLE "user" ADD COLUMN chat_id BIGINT
 
 
