@@ -13,15 +13,10 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.sql.Timestamp;
@@ -47,9 +42,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
           "Этот бот создан для вывода напоминай по времени.\n\n"
                   + "Вы можете выполнять команды из главного меню слева или набрав команду:\n\n"
                   + "Введите /start чтобы увидеть приветственное сообщение\n\n"
-                  + "Введите /memo что бы создать напоминание\n\n"
-                  + "Введите /deleteMemo что бы удалить напоминание\n\n"
-                  + "Введите /settings что бы сменить настройки напоминания\n\n"
+                  + "Введите /register чтобы зарегистрироваться\n\n"
                   + "Введите /help чтобы снова увидеть это сообщение";
   static final String YES_BUTTON = "YES_BUTTON";
   static final String NO_BUTTON = "NO_BUTTON";
@@ -66,10 +59,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
     List<BotCommand> listofCommands = new ArrayList<>();
     listofCommands.add(new BotCommand("/start", "get a welcome message"));
-    listofCommands.add(new BotCommand("/mydata", "get your data stored"));
-    listofCommands.add(new BotCommand("/deletedata", "delete my data"));
     listofCommands.add(new BotCommand("/help", "info how to use this bot"));
-    listofCommands.add(new BotCommand("/settings", "set your preferences"));
+    listofCommands.add(new BotCommand("/register", "get new user"));
     try {
       this.execute(new SetMyCommands(listofCommands, new BotCommandScopeDefault(), null));
     } catch (TelegramApiException e) {
@@ -97,65 +88,52 @@ public class TelegramBotService extends TelegramLongPollingBot {
       String messageText = update.getMessage().getText();
       long chatId = update.getMessage().getChatId();
 
+
+
       switch (messageText) {
         case "/start":
 
-          registerUser(update.getMessage());
           startCommandReceived(chatId, update.getMessage().getChat().getUserName());
           break;
 
         case "/help":
-          prepareAndSendMessage(chatId, HELP_TEXT);
+
+          sendMessage(chatId, HELP_TEXT);
           break;
 
+          case "messageText":
+
+              parseMessage(messageText);
+              break;
+
         case "/register":
-          register(chatId);
+
+          registerUser(update.getMessage());
           break;
 
         default:
-          prepareAndSendMessage(chatId, "Извините, команда не была распознана");
+          sendMessage(chatId, "Извините, данная команда не поддерживается!");
       }
     }
   }
 
-  private void register(long chatId) {
 
-    SendMessage message = new SendMessage();
-    message.setChatId(String.valueOf(chatId));
-    message.setText("Вы действительно хотите зарегистрироваться?");
 
-    InlineKeyboardMarkup markupInLine = new InlineKeyboardMarkup();
-    List<List<InlineKeyboardButton>> rowsInLine = new ArrayList<>();
-    List<InlineKeyboardButton> rowInLine = new ArrayList<>();
-    var yesButton = new InlineKeyboardButton();
+  private void startCommandReceived(long chatId, String name) {
 
-    yesButton.setText("Да");
-    yesButton.setCallbackData(YES_BUTTON);
+    String answer = "Привет, рад помочь Вам!";
+    log.info("Ответил пользователю " + name);
 
-    var noButton = new InlineKeyboardButton();
-
-    noButton.setText("Нет");
-    noButton.setCallbackData(NO_BUTTON);
-
-    rowInLine.add(yesButton);
-    rowInLine.add(noButton);
-
-    rowsInLine.add(rowInLine);
-
-    markupInLine.setKeyboard(rowsInLine);
-    message.setReplyMarkup(markupInLine);
-
-    executeMessage(message);
+    sendMessage(chatId, answer);
   }
-
-  // регистрация пользователя
+  //регистрация User
   private void registerUser(Message msg) {
-    // проверяет нет ли такого пользователя
-    if (userRepository.findById(msg.getChatId()).isEmpty()) {
+
+    if(userRepository.findById(msg.getChatId()).isEmpty()){
 
       var chatId = msg.getChatId();
       var chat = msg.getChat();
-      // если нет такого пользователя добавляем
+
       User user = new User();
 
       user.setChatId(chatId);
@@ -163,16 +141,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
       user.setRegisteredAt(new Timestamp(System.currentTimeMillis()));
 
       userRepository.save(user);
-      log.info("пользователь сохранен: " + user);
+      log.info("user saved: " + user);
     }
-  }
-
-  private void startCommandReceived(long chatId, String name) {
-
-    String answer = "Привет, " + name + ", приятно познакомиться с вами!" + " :blush:";
-    log.info("Ответил пользователю " + name);
-
-    sendMessage(chatId, answer);
   }
 
   // метод отправить сообщение
@@ -181,39 +151,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
     message.setChatId(String.valueOf(chatId));
     message.setText(textToSend);
 
-    ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
-
-    List<KeyboardRow> keyboardRows = new ArrayList<>();
-
-    KeyboardRow row = new KeyboardRow();
-
-    row.add("weather");
-    row.add("get random joke");
-
-    keyboardRows.add(row);
-
-    row = new KeyboardRow();
-
-    row.add("register");
-    row.add("check my data");
-    row.add("delete my data");
-
-    keyboardRows.add(row);
-
-    keyboardMarkup.setKeyboard(keyboardRows);
-
-    message.setReplyMarkup(keyboardMarkup);
-
-    executeMessage(message);
-  }
-
-  // метод редактирования текста сообщения
-  private void executeEditMessageText(String text, long chatId, long messageId) {
-    EditMessageText message = new EditMessageText();
-    message.setChatId(String.valueOf(chatId));
-    message.setText(text);
-    message.setMessageId((int) messageId);
-
     try {
       execute(message);
     } catch (TelegramApiException e) {
@@ -221,22 +158,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
   }
 
-  // метод принимающий сообщение
-  private void executeMessage(SendMessage message) {
-    try {
-      execute(message);
-    } catch (TelegramApiException e) {
-      log.error(ERROR_TEXT + e.getMessage());
-    }
-  }
 
-  // метод подготовка и отправка сообщения
-  private void prepareAndSendMessage(long chatId, String textToSend) {
-    SendMessage message = new SendMessage();
-    message.setChatId(String.valueOf(chatId));
-    message.setText(textToSend);
-    executeMessage(message);
-  }
 
   private void parseMessage(String text) {
     Pattern pattern = Pattern.compile("([0-9.:\\s]{16})(\\s)([\\W+]+)");
@@ -252,7 +174,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
   @Scheduled(cron = "${cron.scheduler}")
   private void sendMemo() {
     LocalDateTime currentDate = LocalDateTime.now();
-    List<NotificationTask> allTask = this.notificationTaskRepository.findByTaskDate(currentDate);
+    List<NotificationTask> allTask = this.notificationTaskRepository.findByCurrentDate(currentDate);
     for (NotificationTask notificationTask : allTask) {
       String chat = String.valueOf(notificationTask.getUser().getChatId());
       String message = notificationTask.getTask();
@@ -270,7 +192,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
   public List<NotificationTask> findByTaskDate(LocalDateTime currentDate){
     log.debug("Method findByTaskDate was invoked");
-    return notificationTaskRepository.findByTaskDate(currentDate).stream()
+    return notificationTaskRepository.findByCurrentDate(currentDate).stream()
             .filter(notificationTask -> notificationTask.getCurrentDate() == currentDate)
             .collect(Collectors.toList());
   }

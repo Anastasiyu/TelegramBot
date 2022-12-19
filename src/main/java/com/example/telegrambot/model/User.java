@@ -6,7 +6,7 @@ import javax.persistence.OneToMany;
 import java.sql.Timestamp;
 import java.util.Collection;
 
-@Entity(name = "User")
+@Entity(name = "user")
 public class User {
 
     @Id
@@ -18,6 +18,7 @@ public class User {
     private Timestamp registeredAt;
     @OneToMany(mappedBy = "user")
     private Collection<NotificationTask> notification_tasks;
+
 
 
     public Long getChatId() {
